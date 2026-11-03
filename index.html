@@ -203,7 +203,6 @@
       border-color: var(--primary);
     }
 
-    /* Attendance Buttons */
     .att-box {
       display: flex;
       gap: 10px;
@@ -222,7 +221,6 @@
     .att-btn.present.active { background: #dcfce7; color: #15803d; border-color: #86efac; }
     .att-btn.absent.active { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 
-    /* Salah Checkboxes */
     .salah-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -446,8 +444,8 @@
             </div>
           </div>
 
-          <!-- Core Hifz Lessons -->
-          <div class="grid-3">
+          <!-- Core Hifz Lessons (hidden if Absent) -->
+          <div class="grid-3" id="sec-lessons-grid">
             <div class="card" style="margin-bottom:0; background:#f0fdf4; border-color:#bbf7d0;">
               <strong style="font-size:0.85rem; color:#166534;">1. Sabaq (New Lesson)</strong>
               <div class="form-group" style="margin-top:6px;">
@@ -499,7 +497,7 @@
           </div>
 
           <div class="form-group" style="margin-top:12px;">
-            <label>Ustadh Remark / Tajweed Notes</label>
+            <label>Ustadh Remark / Reason for Absence</label>
             <input type="text" id="teacher-note" placeholder="Remark for parents...">
           </div>
 
@@ -552,6 +550,23 @@
       currentAttendance = status;
       document.getElementById('btn-att-present').classList.toggle('active', status === 'Present');
       document.getElementById('btn-att-absent').classList.toggle('active', status === 'Absent');
+
+      const lessonSection = document.getElementById('sec-lessons-grid');
+      const sabaqInput = document.getElementById('sabaq-target');
+      const sabqiInput = document.getElementById('sabqi-target');
+      const manzilInput = document.getElementById('manzil-target');
+
+      if (status === 'Absent') {
+        if (lessonSection) lessonSection.classList.add('hidden');
+        sabaqInput.required = false;
+        sabqiInput.required = false;
+        manzilInput.required = false;
+      } else {
+        if (lessonSection) lessonSection.classList.remove('hidden');
+        sabaqInput.required = true;
+        sabqiInput.required = true;
+        manzilInput.required = true;
+      }
     };
 
     window.performLogin = async function() {
@@ -618,7 +633,6 @@
       document.getElementById('view-teacher').classList.toggle('hidden', currentUser.role !== 'teacher');
       document.getElementById('view-parent').classList.toggle('hidden', currentUser.role !== 'parent');
 
-      // Adjust for residential features
       document.getElementById('sec-residential-salah').classList.toggle('hidden', campusMode !== 'residential');
 
       if (currentUser.role === 'principal') setupPrincipalPortal();
@@ -698,33 +712,48 @@
       const sel = document.getElementById('t-student-select');
       const studentId = sel.value;
       const studentName = sel.options[sel.selectedIndex].text.split(' (')[0];
+      const isAbsent = currentAttendance === 'Absent';
 
-      // Build Salah status if residential
-      const salahStatus = campusMode === 'residential' ? {
-        subh: document.getElementById('salah-subh').checked,
-        zuhr: document.getElementById('salah-zuhr').checked,
-        asr: document.getElementById('salah-asr').checked,
-        maghrib: document.getElementById('salah-maghrib').checked,
-        isha: document.getElementById('salah-isha').checked,
-      } : null;
+      const logPayload = {
+        studentId,
+        studentName,
+        attendance: currentAttendance,
+        verifiedBy: currentUser.name,
+        createdAt: window.fTimestamp(),
+        dateStr: new Date().toLocaleDateString('en-GB'),
+        note: document.getElementById('teacher-note').value || (isAbsent ? "Marked Absent" : "")
+      };
+
+      if (!isAbsent) {
+        logPayload.sabaq = { 
+          target: document.getElementById('sabaq-target').value, 
+          grade: document.getElementById('sabaq-grade').value 
+        };
+        logPayload.sabqi = { 
+          target: document.getElementById('sabqi-target').value, 
+          grade: document.getElementById('sabqi-grade').value 
+        };
+        logPayload.manzil = { 
+          target: document.getElementById('manzil-target').value, 
+          grade: document.getElementById('manzil-grade').value 
+        };
+
+        if (campusMode === 'residential') {
+          logPayload.salah = {
+            subh: document.getElementById('salah-subh').checked,
+            zuhr: document.getElementById('salah-zuhr').checked,
+            asr: document.getElementById('salah-asr').checked,
+            maghrib: document.getElementById('salah-maghrib').checked,
+            isha: document.getElementById('salah-isha').checked,
+          };
+        }
+      }
 
       try {
-        await window.fAddDoc(window.fCollection(window.fDb, 'hifz_logs'), {
-          studentId,
-          studentName,
-          attendance: currentAttendance,
-          salah: salahStatus,
-          sabaq: { target: document.getElementById('sabaq-target').value, grade: document.getElementById('sabaq-grade').value },
-          sabqi: { target: document.getElementById('sabqi-target').value, grade: document.getElementById('sabqi-grade').value },
-          manzil: { target: document.getElementById('manzil-target').value, grade: document.getElementById('manzil-grade').value },
-          note: document.getElementById('teacher-note').value,
-          verifiedBy: currentUser.name,
-          createdAt: window.fTimestamp(),
-          dateStr: new Date().toLocaleDateString('en-GB')
-        });
-
-        alert('Daily Log Verified & Synced!');
+        await window.fAddDoc(window.fCollection(window.fDb, 'hifz_logs'), logPayload);
+        alert(isAbsent ? 'Student marked Absent!' : 'Daily Log Verified & Synced!');
         e.target.reset();
+        setAttendance('Present');
       } catch (err) {
         alert('Sync failed: ' + err.message);
       } finally {
@@ -791,25 +820,34 @@
         el.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">No verified logs recorded yet.</p>';
         return;
       }
-      el.innerHTML = items.map(r => `
-        <div class="feed-item">
-          <div class="feed-header">
-            <strong>${r.studentName} (${r.studentId})</strong>
-            <span style="color:var(--text-muted); font-size:0.75rem;">${r.dateStr || ''}</span>
+      el.innerHTML = items.map(r => {
+        const isAbsent = r.attendance === 'Absent';
+        return `
+          <div class="feed-item">
+            <div class="feed-header">
+              <strong>${r.studentName} (${r.studentId})</strong>
+              <span style="color:var(--text-muted); font-size:0.75rem;">${r.dateStr || ''}</span>
+            </div>
+            <div style="margin: 4px 0;">
+              <span class="tag ${isAbsent ? 'tag-absent' : 'tag-present'}">${r.attendance || 'Present'}</span>
+              ${r.salah ? `<span style="font-size:0.75rem; color:#854d0e; margin-left:6px;">🕌 Jama'at logged</span>` : ''}
+            </div>
+            ${isAbsent ? `
+              <div style="font-size:0.82rem; color:#991b1b; background:#fee2e2; padding:6px 10px; border-radius:6px; margin:4px 0;">
+                No lessons recorded (Student was absent).
+              </div>
+            ` : `
+              <div style="font-size:0.82rem;">
+                <div><strong>Sabaq:</strong> ${r.sabaq?.target || '—'} <span class="tag tag-mumtaz">${r.sabaq?.grade || ''}</span></div>
+                <div><strong>Sabqi:</strong> ${r.sabqi?.target || '—'} <span class="tag tag-jayyid">${r.sabqi?.grade || ''}</span></div>
+                <div><strong>Manzil:</strong> ${r.manzil?.target || '—'} <span class="tag tag-mumtaz">${r.manzil?.grade || ''}</span></div>
+              </div>
+            `}
+            ${r.note ? `<small style="color:var(--text-muted); font-style:italic;">"${r.note}"</small>` : ''}
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Recorded by: ${r.verifiedBy}</div>
           </div>
-          <div style="margin: 4px 0;">
-            <span class="tag ${r.attendance === 'Absent' ? 'tag-absent' : 'tag-present'}">${r.attendance || 'Present'}</span>
-            ${r.salah ? `<span style="font-size:0.75rem; color:#854d0e; margin-left:6px;">🕌 Jama'at logged</span>` : ''}
-          </div>
-          <div style="font-size:0.82rem;">
-            <div><strong>Sabaq:</strong> ${r.sabaq?.target} <span class="tag tag-mumtaz">${r.sabaq?.grade}</span></div>
-            <div><strong>Sabqi:</strong> ${r.sabqi?.target} <span class="tag tag-jayyid">${r.sabqi?.grade}</span></div>
-            <div><strong>Manzil:</strong> ${r.manzil?.target} <span class="tag tag-mumtaz">${r.manzil?.grade}</span></div>
-          </div>
-          ${r.note ? `<small style="color:var(--text-muted); font-style:italic;">"${r.note}"</small>` : ''}
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Verified by: ${r.verifiedBy}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     window.addEventListener('firebase-ready', () => {
