@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Al-Furqan Hifz Tracker</title>
+
+  <!-- PWA Meta Tags for iOS & Android -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HifzTracker">
+  <meta name="theme-color" content="#064e3b">
+
+  <!-- Web App Manifest (Data URI for single file deployment) -->
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Al-Furqan%20Hifz%20Tracker%22%2C%22short_name%22%3A%22HifzTracker%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4f6f8%22%2C%22theme_color%22%3A%22%23064e3b%22%7D">
+
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase Modular SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      query, 
+      where, 
+      orderBy, 
+      onSnapshot, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // Your registered Firebase project credentials
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNvTkmPgXSSpnk_avQkBybMXu87fwxfMY",
+      authDomain: "hifz-tracker-d4213.firebaseapp.com",
+      projectId: "hifz-tracker-d4213",
+      storageBucket: "hifz-tracker-d4213.firebasestorage.app",
+      messagingSenderId: "674143180843",
+      appId: "1:674143180843:web:db59e50107cd588c1b726e",
+      measurementId: "G-QKFMM1EHD7"
+    };
+
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Expose helpers globally for app UI
+    window.fDb = db;
+    window.fCollection = collection;
+    window.fAddDoc = addDoc;
+    window.fQuery = query;
+    window.fWhere = where;
+    window.fOrderBy = orderBy;
+    window.fOnSnapshot = onSnapshot;
+    window.fTimestamp = serverTimestamp;
+
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
+  <style>
+    :root {
+      --primary: #064e3b;
+      --primary-light: #047857;
+      --accent: #d97706;
+      --accent-light: #fef3c7;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 50px; }
+    
+    header {
+      background: linear-gradient(135deg, #064e3b, #022c22);
+      color: #fff;
+      padding: 1.25rem 1rem;
+      box-shadow: 0 4px 20px rgba(6, 78, 59, 0.15);
+    }
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand h1 { font-family: 'Amiri', serif; font-size: 1.6rem; letter-spacing: 0.5px; }
+    .brand p { font-size: 0.8rem; color: #a7f3d0; }
+    
+    .role-switcher {
+      display: flex;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 4px;
+      border-radius: 30px;
+      gap: 4px;
+    }
+    .role-btn {
+      border: none;
+      background: transparent;
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .role-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    main { max-width: 900px; margin: 1.25rem auto; padding: 0 1rem; }
+    
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      margin-bottom: 1.25rem;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+    }
+
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary-light); }
+    
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    
+    .btn-submit {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: var(--primary-light); }
+    
+    .feed-item {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-header { display: flex; justify-content: space-between; font-size: 0.85rem; }
+    .feed-date { color: var(--text-muted); font-size: 0.78rem; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .tag-mumtaz { background: #dcfce7; color: #15803d; }
+    .tag-jayyid { background: #fef3c7; color: #b45309; }
+    
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    .stat-val { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+    .stat-lbl { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+    .juz-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .juz-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e2e8f0;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+    .juz-cell.completed { background: #10b981; color: white; }
+
+    .sync-status {
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #34d399;
+      margin-top: 4px;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: #34d399;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <h1>معهد الفرقان لتحفيظ القرآن</h1>
+        <p>Al-Furqan Hifz Tracking System</p>
+        <div class="sync-status"><span class="live-dot"></span> Cloud Firestore Live</div>
+      </div>
+      <div class="role-switcher">
+        <button class="role-btn active" onclick="switchRole('teacher')">Ustadh</button>
+        <button class="role-btn" onclick="switchRole('parent')">Parent</button>
+        <button class="role-btn" onclick="switchRole('principal')">Principal</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- STATS ROW -->
+    <div class="stats-bar">
+      <div class="stat-box">
+        <div class="stat-val" id="stat-students">12</div>
+        <div class="stat-lbl">Active Huffaz</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-today">0</div>
+        <div class="stat-lbl">Verified Today</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-juz">14.2</div>
+        <div class="stat-lbl">Avg Juz Memorized</div>
+      </div>
+    </div>
+
+    <!-- 1. TEACHER DESK (USTADH) -->
+    <section id="view-teacher">
+      <div class="card">
+        <div class="card-title"><i data-lucide="edit-3"></i> Daily Verification Desk</div>
+        
+        <form id="hifz-entry-form" onsubmit="handleLogSubmit(event)">
+          <div class="form-group">
+            <label>Select Student</label>
+            <select id="teacher-student-select">
+              <option value="STD-101">Zaid Mansoor (Juz 15)</option>
+              <option value="STD-102">Ahmad Bilal (Juz 8)</option>
+              <option value="STD-103">Omar Farooq (Juz 22)</option>
+            </select>
+          </div>
+
+          <div class="grid-3">
+            <!-- Sabaq -->
+            <div class="card" style="margin-bottom:0; background:#f0fdf4; border-color:#bbf7d0;">
+              <strong style="font-size:0.85rem; color:#166534;">1. Sabaq (New Lesson)</strong>
+              <div class="form-group" style="margin-top:8px;">
+                <label>Surah & Ayahs</label>
+                <input type="text" id="sabaq-target" placeholder="e.g. Al-Kahf 1-15" required>
+              </div>
+              <div class="form-group">
+                <label>Evaluation</label>
+                <select id="sabaq-grade">
+                  <option value="Mumtaz (Excellent)">Mumtaz (ممتاز)</option>
+                  <option value="Jayyid Jiddan (Very Good)">Jayyid Jiddan (جيد جداً)</option>
+                  <option value="Jayyid (Good)">Jayyid (جيد)</option>
+                  <option value="Needs Repeat">Needs Repeat (إعادة)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Sabqi -->
+            <div class="card" style="margin-bottom:0; background:#fffbeb; border-color:#fde68a;">
+              <strong style="font-size:0.85rem; color:#92400e;">2. Sabqi (Recent)</strong>
+              <div class="form-group" style="margin-top:8px;">
+                <label>Recent Portion</label>
+                <input type="text" id="sabqi-target" placeholder="e.g. Juz 15 (First 5 pgs)" required>
+              </div>
+              <div class="form-group">
+                <label>Evaluation</label>
+                <select id="sabqi-grade">
+                  <option value="Mumtaz (Excellent)">Mumtaz (ممتاز)</option>
+                  <option value="Jayyid Jiddan">Jayyid Jiddan</option>
+                  <option value="Weak / Stumbles">Weak / Stumbles</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Manzil -->
+            <div class="card" style="margin-bottom:0; background:#eff6ff; border-color:#bfdbfe;">
+              <strong style="font-size:0.85rem; color:#1e40af;">3. Manzil (Old Revision)</strong>
+              <div class="form-group" style="margin-top:8px;">
+                <label>Full Revision Juz</label>
+                <input type="text" id="manzil-target" placeholder="e.g. Juz 4" required>
+              </div>
+              <div class="form-group">
+                <label>Evaluation</label>
+                <select id="manzil-grade">
+                  <option value="Mumtaz (Solid)">Mumtaz (Solid)</option>
+                  <option value="Acceptable">Acceptable</option>
+                  <option value="Needs Revision">Needs Revision</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label>Ustadh Feedback Note</label>
+            <input type="text" id="teacher-note" placeholder="Good tajweed in madd, focus on ghunnah...">
+          </div>
+
+          <button type="submit" class="btn-submit" id="btn-save">
+            <i data-lucide="check-circle-2"></i> Verify & Sync to Parent
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. PARENT PORTAL -->
+    <section id="view-parent" class="hidden">
+      <div class="card">
+        <div class="card-title"><i data-lucide="user-check"></i> Student: Zaid Mansoor</div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">30 Juz Memorization Spectrum</p>
+        
+        <!-- 30 Juz visual chart -->
+        <div class="juz-grid" id="parent-juz-grid"></div>
+        <small style="color:var(--text-muted); display:block; margin-top:8px;">Green boxes indicate fully memorized and revised Juz (1–15).</small>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i data-lucide="history"></i> Live Hifz Progress Feed</div>
+        <div id="parent-records-feed">
+          <p style="color:var(--text-muted); font-size:0.85rem;">Listening for cloud updates...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PRINCIPAL OVERSIGHT -->
+    <section id="view-principal" class="hidden">
+      <div class="card">
+        <div class="card-title"><i data-lucide="shield-check"></i> College-Wide Live Activity</div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Audit all verification entries across classes in real-time.</p>
+        <div id="principal-records-feed">
+          <p style="color:var(--text-muted); font-size:0.85rem;">Fetching records from cloud...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let activeRole = 'teacher';
+    let unsubscribeFirestore = null;
+
+    // Build the 30 Juz visual boxes in parent view
+    function renderJuzGrid() {
+      const grid = document.getElementById('parent-juz-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      for (let i = 1; i <= 30; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'juz-cell ' + (i <= 15 ? 'completed' : '');
+        cell.innerText = i;
+        grid.appendChild(cell);
+      }
+    }
+
+    // Role Switching
+    window.switchRole = function(role) {
+      activeRole = role;
+      document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.getElementById('view-teacher').classList.toggle('hidden', role !== 'teacher');
+      document.getElementById('view-parent').classList.toggle('hidden', role !== 'parent');
+      document.getElementById('view-principal').classList.toggle('hidden', role !== 'principal');
+
+      initDataSubscription();
+      lucide.createIcons();
+    };
+
+    // Submit Daily Log to Firestore
+    window.handleLogSubmit = async function(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('btn-save');
+      saveBtn.disabled = true;
+      saveBtn.innerText = "Syncing to Cloud...";
+
+      const studentId = document.getElementById('teacher-student-select').value;
+      const sabaqTarget = document.getElementById('sabaq-target').value;
+      const sabaqGrade = document.getElementById('sabaq-grade').value;
+      const sabqiTarget = document.getElementById('sabqi-target').value;
+      const sabqiGrade = document.getElementById('sabqi-grade').value;
+      const manzilTarget = document.getElementById('manzil-target').value;
+      const manzilGrade = document.getElementById('manzil-grade').value;
+      const teacherNote = document.getElementById('teacher-note').value;
+
+      try {
+        await window.fAddDoc(window.fCollection(window.fDb, "hifz_logs"), {
+          studentId: studentId,
+          studentName: studentId === 'STD-101' ? 'Zaid Mansoor' : (studentId === 'STD-102' ? 'Ahmad Bilal' : 'Omar Farooq'),
+          sabaq: { target: sabaqTarget, grade: sabaqGrade },
+          sabqi: { target: sabqiTarget, grade: sabqiGrade },
+          manzil: { target: manzilTarget, grade: manzilGrade },
+          note: teacherNote,
+          verifiedBy: "Ustadh Ahmad",
+          createdAt: window.fTimestamp(),
+          dateStr: new Date().toLocaleDateString('en-GB')
+        });
+
+        alert("Record verified and synced to cloud in real time!");
+        document.getElementById('hifz-entry-form').reset();
+      } catch (err) {
+        console.error("Firestore error: ", err);
+        alert("Failed to sync. Please check network/rules: " + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i data-lucide="check-circle-2"></i> Verify & Sync to Parent';
+        lucide.createIcons();
+      }
+    };
+
+    // Real-Time Listener
+    function initDataSubscription() {
+      if (!window.fDb) return;
+      if (unsubscribeFirestore) unsubscribeFirestore();
+
+      const logsRef = window.fCollection(window.fDb, "hifz_logs");
+      let q;
+
+      if (activeRole === 'parent') {
+        // Parent only receives records for Zaid Mansoor (STD-101)
+        q = window.fQuery(logsRef, window.fWhere("studentId", "==", "STD-101"));
+      } else {
+        // Principal and Teacher inspect recent activity
+        q = window.fQuery(logsRef);
+      }
+
+      unsubscribeFirestore = window.fOnSnapshot(q, (snapshot) => {
+        const records = [];
+        snapshot.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+
+        // Sort locally by timestamp descending
+        records.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        document.getElementById('stat-today').innerText = records.length;
+
+        if (activeRole === 'parent') {
+          renderFeed('parent-records-feed', records);
+        } else if (activeRole === 'principal') {
+          renderFeed('principal-records-feed', records);
+        }
+      }, (err) => {
+        console.warn("Snapshot notice:", err.message);
+      });
+    }
+
+    function renderFeed(elementId, items) {
+      const container = document.getElementById(elementId);
+      if (!container) return;
+
+      if (items.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; padding:10px 0;">No verified records recorded yet.</p>';
+        return;
+      }
+
+      container.innerHTML = items.map(r => `
+        <div class="feed-item">
+          <div class="feed-header">
+            <strong>${r.studentName} (${r.studentId})</strong>
+            <span class="feed-date">${r.dateStr || 'Recent'}</span>
+          </div>
+          <div style="font-size:0.85rem; margin-top:4px;">
+            <div><strong>Sabaq:</strong> ${r.sabaq?.target || '—'} <span class="tag tag-mumtaz">${r.sabaq?.grade || ''}</span></div>
+            <div><strong>Sabqi:</strong> ${r.sabqi?.target || '—'} <span class="tag tag-jayyid">${r.sabqi?.grade || ''}</span></div>
+            <div><strong>Manzil:</strong> ${r.manzil?.target || '—'} <span class="tag tag-mumtaz">${r.manzil?.grade || ''}</span></div>
+          </div>
+          ${r.note ? `<p style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-top:2px;">"${r.note}"</p>` : ''}
+          <small style="color:var(--text-muted); font-size:0.75rem;">Verified by ${r.verifiedBy || 'Ustadh'}</small>
+        </div>
+      `).join('');
+    }
+
+    window.addEventListener('firebase-ready', () => {
+      renderJuzGrid();
+      initDataSubscription();
+      lucide.createIcons();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderJuzGrid();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
