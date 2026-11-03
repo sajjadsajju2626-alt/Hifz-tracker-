@@ -87,7 +87,7 @@
       box-shadow: 0 4px 15px rgba(6, 78, 59, 0.15);
     }
     .header-inner {
-      max-width: 900px;
+      max-width: 950px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
@@ -128,7 +128,7 @@
       font-weight: 600;
     }
 
-    main { max-width: 900px; margin: 1.25rem auto; padding: 0 1rem; }
+    main { max-width: 950px; margin: 1.25rem auto; padding: 0 1rem; }
 
     .card {
       background: var(--surface);
@@ -203,6 +203,7 @@
       border-color: var(--primary);
     }
 
+    /* Attendance Buttons */
     .att-box {
       display: flex;
       gap: 10px;
@@ -221,6 +222,7 @@
     .att-btn.present.active { background: #dcfce7; color: #15803d; border-color: #86efac; }
     .att-btn.absent.active { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 
+    /* Salah Checkboxes */
     .salah-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -251,12 +253,54 @@
     .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
     .tag-mumtaz { background: #dcfce7; color: #15803d; }
     .tag-jayyid { background: #fef3c7; color: #b45309; }
+    .tag-not-recited { background: #f1f5f9; color: #64748b; border: 1px dashed #cbd5e1; }
+    .tag-repeat { background: #fee2e2; color: #991b1b; }
     .tag-present { background: #dcfce7; color: #166534; }
     .tag-absent { background: #fee2e2; color: #991b1b; }
 
     .juz-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-top: 8px; }
     .juz-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #e2e8f0; border-radius: 4px; font-size: 0.7rem; font-weight: 600; color: #64748b; }
     .juz-cell.completed { background: #10b981; color: white; }
+
+    /* Student Portfolio Cards in Principal */
+    .student-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .student-card-header {
+      padding: 14px;
+      background: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .student-card-header:hover { background: #f1f5f9; }
+    .student-body {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .student-body.active { display: block; }
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .metric-card {
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .metric-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+    .metric-val { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
 
     .hidden { display: none !important; }
   </style>
@@ -321,21 +365,30 @@
     <!-- 1. PRINCIPAL VIEW -->
     <section id="view-principal" class="hidden">
       <div class="sub-tabs">
-        <button class="sub-tab-btn active" onclick="switchPrincipalTab('overview')">Live Audit</button>
-        <button class="sub-tab-btn" onclick="switchPrincipalTab('students')">Manage Students</button>
-        <button class="sub-tab-btn" onclick="switchPrincipalTab('teachers')">Manage Teachers</button>
+        <button class="sub-tab-btn active" onclick="switchPrincipalTab('portfolios')">Student Portfolios</button>
+        <button class="sub-tab-btn" onclick="switchPrincipalTab('overview')">Live Feed</button>
+        <button class="sub-tab-btn" onclick="switchPrincipalTab('students')">Add Student</button>
+        <button class="sub-tab-btn" onclick="switchPrincipalTab('teachers')">Add Ustadh</button>
         <button class="sub-tab-btn" onclick="switchPrincipalTab('settings')">Campus Settings</button>
       </div>
 
-      <!-- Live Feed -->
-      <div id="p-tab-overview">
+      <!-- Tab: Student Portfolios -->
+      <div id="p-tab-portfolios">
+        <div class="card">
+          <div class="card-title"><i data-lucide="users"></i> Student-Centric Comprehensive Dossier</div>
+          <div id="principal-students-list">Loading student profiles...</div>
+        </div>
+      </div>
+
+      <!-- Tab: Live Feed -->
+      <div id="p-tab-overview" class="hidden">
         <div class="card">
           <div class="card-title"><i data-lucide="activity"></i> Campus Live Activity</div>
           <div id="principal-feed">Fetching logs...</div>
         </div>
       </div>
 
-      <!-- Students -->
+      <!-- Tab: Add Students -->
       <div id="p-tab-students" class="hidden">
         <div class="card">
           <div class="card-title"><i data-lucide="user-plus"></i> Add New Student</div>
@@ -361,7 +414,7 @@
         </div>
       </div>
 
-      <!-- Teachers -->
+      <!-- Tab: Add Teachers -->
       <div id="p-tab-teachers" class="hidden">
         <div class="card">
           <div class="card-title"><i data-lucide="user-check"></i> Add New Ustadh</div>
@@ -383,7 +436,7 @@
         </div>
       </div>
 
-      <!-- Settings & Campus Mode -->
+      <!-- Tab: Campus Settings -->
       <div id="p-tab-settings" class="hidden">
         <div class="card">
           <div class="card-title"><i data-lucide="settings"></i> Campus Configuration</div>
@@ -394,9 +447,6 @@
                 <option value="day">Day College (ഡേ കോളേജ്)</option>
                 <option value="residential">Residential Campus (താമസിച്ചു പഠിക്കുന്ന സ്ഥാപനം)</option>
               </select>
-              <small style="color:var(--text-muted); display:block; margin-top:4px;">
-                Selecting Residential unlocks Salah & Ibadah logging on Ustadh & Parent desks.
-              </small>
             </div>
             <div class="form-group">
               <label>College Name (Arabic / Title)</label>
@@ -415,7 +465,7 @@
     <!-- 2. TEACHER VIEW (USTADH) -->
     <section id="view-teacher" class="hidden">
       <div class="card">
-        <div class="card-title"><i data-lucide="book-open"></i> Daily Verification & Attendance Desk</div>
+        <div class="card-title"><i data-lucide="book-open"></i> Daily Verification & Evaluation Desk</div>
         <form onsubmit="handleLogSubmit(event)">
           
           <div class="form-group">
@@ -444,61 +494,77 @@
             </div>
           </div>
 
-          <!-- Core Hifz Lessons (hidden if Absent) -->
+          <!-- Core Hifz Lessons (with Not Recited options) -->
           <div class="grid-3" id="sec-lessons-grid">
+            <!-- Sabaq -->
             <div class="card" style="margin-bottom:0; background:#f0fdf4; border-color:#bbf7d0;">
               <strong style="font-size:0.85rem; color:#166534;">1. Sabaq (New Lesson)</strong>
               <div class="form-group" style="margin-top:6px;">
                 <label>Surah & Ayahs</label>
-                <input type="text" id="sabaq-target" placeholder="Surah & Ayahs" required>
+                <input type="text" id="sabaq-target" placeholder="Surah & Ayahs (optional if not recited)">
               </div>
               <div class="form-group">
-                <label>Evaluation</label>
+                <label>Evaluation / Status</label>
                 <select id="sabaq-grade">
                   <option value="Mumtaz (ممتاز)">Mumtaz (ممتاز)</option>
                   <option value="Jayyid Jiddan">Jayyid Jiddan</option>
                   <option value="Jayyid">Jayyid</option>
                   <option value="Needs Repeat">Needs Repeat</option>
+                  <option value="Not Recited" style="color:#b91c1c; font-weight:700;">Not Recited (കേൾപ്പിച്ചില്ല)</option>
                 </select>
               </div>
             </div>
 
+            <!-- Sabqi -->
             <div class="card" style="margin-bottom:0; background:#fffbeb; border-color:#fde68a;">
               <strong style="font-size:0.85rem; color:#92400e;">2. Sabqi (Recent)</strong>
               <div class="form-group" style="margin-top:6px;">
                 <label>Portion</label>
-                <input type="text" id="sabqi-target" placeholder="e.g. 5 pages" required>
+                <input type="text" id="sabqi-target" placeholder="e.g. 5 pages (optional)">
               </div>
               <div class="form-group">
-                <label>Evaluation</label>
+                <label>Evaluation / Status</label>
                 <select id="sabqi-grade">
                   <option value="Mumtaz">Mumtaz</option>
                   <option value="Jayyid Jiddan">Jayyid Jiddan</option>
                   <option value="Weak">Weak</option>
+                  <option value="Not Recited" style="color:#b91c1c; font-weight:700;">Not Recited (കേൾപ്പിച്ചില്ല)</option>
                 </select>
               </div>
             </div>
 
+            <!-- Manzil -->
             <div class="card" style="margin-bottom:0; background:#eff6ff; border-color:#bfdbfe;">
               <strong style="font-size:0.85rem; color:#1e40af;">3. Manzil (Revision)</strong>
               <div class="form-group" style="margin-top:6px;">
                 <label>Juz</label>
-                <input type="text" id="manzil-target" placeholder="e.g. Juz 4" required>
+                <input type="text" id="manzil-target" placeholder="e.g. Juz 4 (optional)">
               </div>
               <div class="form-group">
-                <label>Evaluation</label>
+                <label>Evaluation / Status</label>
                 <select id="manzil-grade">
                   <option value="Mumtaz (Solid)">Mumtaz (Solid)</option>
                   <option value="Acceptable">Acceptable</option>
                   <option value="Needs Revision">Needs Revision</option>
+                  <option value="Not Recited" style="color:#b91c1c; font-weight:700;">Not Recited (കേൾപ്പിച്ചില്ല)</option>
                 </select>
               </div>
             </div>
           </div>
 
+          <!-- Behavior & Conduct Rating -->
           <div class="form-group" style="margin-top:12px;">
-            <label>Ustadh Remark / Reason for Absence</label>
-            <input type="text" id="teacher-note" placeholder="Remark for parents...">
+            <label>Conduct & Akhlaq (സ്വഭാവം & അച്ചടക്കം)</label>
+            <select id="student-akhlaq">
+              <option value="Excellent (ممتاز)">Excellent (മികച്ച അച്ചടക്കം)</option>
+              <option value="Good (നല്ലത്)">Good (നല്ലത്)</option>
+              <option value="Needs Focus">Needs Focus (ശ്രദ്ധിക്കേണ്ടതുണ്ട്)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Ustadh Remark / Notes for Principal & Parents</label>
+            <input type="text" id="teacher-note" placeholder="Remark on tajweed, behavior, or absence reason...">
           </div>
 
           <button type="submit" class="btn-primary" id="btn-save-log">
@@ -528,6 +594,8 @@
     let unsubscribeFeed = null;
     let currentAttendance = 'Present';
     let campusMode = 'day';
+    let globalStudents = [];
+    let globalLogs = [];
 
     window.toggleLoginFields = function() {
       const role = document.getElementById('login-role').value;
@@ -552,20 +620,10 @@
       document.getElementById('btn-att-absent').classList.toggle('active', status === 'Absent');
 
       const lessonSection = document.getElementById('sec-lessons-grid');
-      const sabaqInput = document.getElementById('sabaq-target');
-      const sabqiInput = document.getElementById('sabqi-target');
-      const manzilInput = document.getElementById('manzil-target');
-
       if (status === 'Absent') {
         if (lessonSection) lessonSection.classList.add('hidden');
-        sabaqInput.required = false;
-        sabqiInput.required = false;
-        manzilInput.required = false;
       } else {
         if (lessonSection) lessonSection.classList.remove('hidden');
-        sabaqInput.required = true;
-        sabqiInput.required = true;
-        manzilInput.required = true;
       }
     };
 
@@ -653,7 +711,7 @@
     };
 
     window.switchPrincipalTab = function(tab) {
-      ['overview', 'students', 'teachers', 'settings'].forEach(t => {
+      ['portfolios', 'overview', 'students', 'teachers', 'settings'].forEach(t => {
         document.getElementById(`p-tab-${t}`).classList.toggle('hidden', t !== tab);
       });
       document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -686,6 +744,7 @@
         });
         alert('Student registered successfully!');
         e.target.reset();
+        setupPrincipalPortal();
       } catch (err) { alert('Error: ' + err.message); }
     };
 
@@ -714,10 +773,15 @@
       const studentName = sel.options[sel.selectedIndex].text.split(' (')[0];
       const isAbsent = currentAttendance === 'Absent';
 
+      const sabaqGrade = document.getElementById('sabaq-grade').value;
+      const sabqiGrade = document.getElementById('sabqi-grade').value;
+      const manzilGrade = document.getElementById('manzil-grade').value;
+
       const logPayload = {
         studentId,
         studentName,
         attendance: currentAttendance,
+        akhlaq: document.getElementById('student-akhlaq').value,
         verifiedBy: currentUser.name,
         createdAt: window.fTimestamp(),
         dateStr: new Date().toLocaleDateString('en-GB'),
@@ -726,16 +790,16 @@
 
       if (!isAbsent) {
         logPayload.sabaq = { 
-          target: document.getElementById('sabaq-target').value, 
-          grade: document.getElementById('sabaq-grade').value 
+          target: sabaqGrade === 'Not Recited' ? 'Not Recited' : (document.getElementById('sabaq-target').value || 'Unspecified'), 
+          grade: sabaqGrade 
         };
         logPayload.sabqi = { 
-          target: document.getElementById('sabqi-target').value, 
-          grade: document.getElementById('sabqi-grade').value 
+          target: sabqiGrade === 'Not Recited' ? 'Not Recited' : (document.getElementById('sabqi-target').value || 'Unspecified'), 
+          grade: sabqiGrade 
         };
         logPayload.manzil = { 
-          target: document.getElementById('manzil-target').value, 
-          grade: document.getElementById('manzil-grade').value 
+          target: manzilGrade === 'Not Recited' ? 'Not Recited' : (document.getElementById('manzil-target').value || 'Unspecified'), 
+          grade: manzilGrade 
         };
 
         if (campusMode === 'residential') {
@@ -802,15 +866,106 @@
       });
     }
 
-    function setupPrincipalPortal() {
+    async function setupPrincipalPortal() {
+      // 1. Fetch Students
+      globalStudents = [{ studentId: 'STD-101', name: 'Zaid Mansoor', juz: 15 }];
+      try {
+        const snap = await window.fGetDocs(window.fCollection(window.fDb, 'students'));
+        snap.forEach(d => {
+          const s = d.data();
+          if (s.studentId !== 'STD-101') globalStudents.push(s);
+        });
+      } catch (e) { console.log(e); }
+
+      // 2. Listen to all logs
       const q = window.fCollection(window.fDb, 'hifz_logs');
       if (unsubscribeFeed) unsubscribeFeed();
       unsubscribeFeed = window.fOnSnapshot(q, (snap) => {
-        const list = [];
-        snap.forEach(d => list.push(d.data()));
-        list.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-        renderList('principal-feed', list);
+        globalLogs = [];
+        snap.forEach(d => globalLogs.push(d.data()));
+        globalLogs.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        
+        renderList('principal-feed', globalLogs);
+        renderPrincipalPortfolios();
       });
+    }
+
+    function renderPrincipalPortfolios() {
+      const container = document.getElementById('principal-students-list');
+      if (!container) return;
+
+      container.innerHTML = globalStudents.map(std => {
+        const stdLogs = globalLogs.filter(l => l.studentId === std.studentId);
+        const totalLogs = stdLogs.length;
+        const presentCount = stdLogs.filter(l => l.attendance !== 'Absent').length;
+        const attRate = totalLogs > 0 ? Math.round((presentCount / totalLogs) * 100) : 100;
+        const latestLog = stdLogs[0] || null;
+
+        return `
+          <div class="student-card">
+            <div class="student-card-header" onclick="togglePortfolioBody('${std.studentId}')">
+              <div>
+                <strong>${std.name}</strong> <span style="font-size:0.8rem; color:var(--text-muted);">(${std.studentId})</span>
+                <div style="font-size:0.75rem; color:#047857; margin-top:2px;">Memorized: Juz ${std.juz || 0} / 30</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="tag tag-present">${attRate}% Attendance</span>
+                <i data-lucide="chevron-down"></i>
+              </div>
+            </div>
+
+            <div class="student-body" id="body-${std.studentId}">
+              <div class="portfolio-grid">
+                <div class="metric-card">
+                  <div class="metric-title">Attendance Rate</div>
+                  <div class="metric-val">${attRate}%</div>
+                  <small style="color:var(--text-muted);">${presentCount} / ${totalLogs} days</small>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-title">Latest Akhlaq & Conduct</div>
+                  <div class="metric-val" style="font-size:0.95rem;">${latestLog?.akhlaq || 'Good'}</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-title">Active Hifz Milestone</div>
+                  <div class="metric-val">${std.juz || 0} Juz</div>
+                  <small style="color:var(--text-muted);">${30 - (std.juz || 0)} Juz remaining</small>
+                </div>
+              </div>
+
+              <strong style="font-size:0.85rem; color:var(--primary); display:block; margin: 10px 0 6px;">Recent Recitations & Entries:</strong>
+              ${stdLogs.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-muted);">No logs submitted yet.</p>' : ''}
+              ${stdLogs.slice(0, 3).map(l => `
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px; margin-bottom:6px; font-size:0.8rem;">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <strong>${l.dateStr}</strong>
+                    <span class="tag ${l.attendance === 'Absent' ? 'tag-absent' : 'tag-present'}">${l.attendance || 'Present'}</span>
+                  </div>
+                  ${l.attendance === 'Absent' ? '<span style="color:#991b1b;">Student was marked absent.</span>' : `
+                    <div><strong>Sabaq:</strong> ${l.sabaq?.target} <span class="tag ${getGradeTagClass(l.sabaq?.grade)}">${l.sabaq?.grade}</span></div>
+                    <div><strong>Sabqi:</strong> ${l.sabqi?.target} <span class="tag ${getGradeTagClass(l.sabqi?.grade)}">${l.sabqi?.grade}</span></div>
+                    <div><strong>Manzil:</strong> ${l.manzil?.target} <span class="tag ${getGradeTagClass(l.manzil?.grade)}">${l.manzil?.grade}</span></div>
+                  `}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    window.togglePortfolioBody = function(stdId) {
+      const body = document.getElementById(`body-${stdId}`);
+      if (body) body.classList.toggle('active');
+    };
+
+    function getGradeTagClass(grade) {
+      if (!grade) return '';
+      if (grade === 'Not Recited') return 'tag-not-recited';
+      if (grade.includes('Mumtaz')) return 'tag-mumtaz';
+      if (grade.includes('Repeat') || grade.includes('Weak')) return 'tag-repeat';
+      return 'tag-jayyid';
     }
 
     function renderList(elemId, items) {
@@ -828,9 +983,10 @@
               <strong>${r.studentName} (${r.studentId})</strong>
               <span style="color:var(--text-muted); font-size:0.75rem;">${r.dateStr || ''}</span>
             </div>
-            <div style="margin: 4px 0;">
+            <div style="margin: 4px 0; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
               <span class="tag ${isAbsent ? 'tag-absent' : 'tag-present'}">${r.attendance || 'Present'}</span>
-              ${r.salah ? `<span style="font-size:0.75rem; color:#854d0e; margin-left:6px;">🕌 Jama'at logged</span>` : ''}
+              ${r.akhlaq ? `<span class="tag" style="background:#e0e7ff; color:#3730a3;">Akhlaq: ${r.akhlaq}</span>` : ''}
+              ${r.salah ? `<span style="font-size:0.75rem; color:#854d0e;">🕌 Jama'at logged</span>` : ''}
             </div>
             ${isAbsent ? `
               <div style="font-size:0.82rem; color:#991b1b; background:#fee2e2; padding:6px 10px; border-radius:6px; margin:4px 0;">
@@ -838,9 +994,9 @@
               </div>
             ` : `
               <div style="font-size:0.82rem;">
-                <div><strong>Sabaq:</strong> ${r.sabaq?.target || '—'} <span class="tag tag-mumtaz">${r.sabaq?.grade || ''}</span></div>
-                <div><strong>Sabqi:</strong> ${r.sabqi?.target || '—'} <span class="tag tag-jayyid">${r.sabqi?.grade || ''}</span></div>
-                <div><strong>Manzil:</strong> ${r.manzil?.target || '—'} <span class="tag tag-mumtaz">${r.manzil?.grade || ''}</span></div>
+                <div><strong>Sabaq:</strong> ${r.sabaq?.target || '—'} <span class="tag ${getGradeTagClass(r.sabaq?.grade)}">${r.sabaq?.grade || ''}</span></div>
+                <div><strong>Sabqi:</strong> ${r.sabqi?.target || '—'} <span class="tag ${getGradeTagClass(r.sabqi?.grade)}">${r.sabqi?.grade || ''}</span></div>
+                <div><strong>Manzil:</strong> ${r.manzil?.target || '—'} <span class="tag ${getGradeTagClass(r.manzil?.grade)}">${r.manzil?.grade || ''}</span></div>
               </div>
             `}
             ${r.note ? `<small style="color:var(--text-muted); font-style:italic;">"${r.note}"</small>` : ''}
