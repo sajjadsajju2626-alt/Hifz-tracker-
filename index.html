@@ -837,57 +837,93 @@
 
     // Print Monthly Report with Auto Akhlaq
     window.printMonthlyReport = function(studentId) {
-      const std = globalStudents.find(s => s.studentId === studentId);
-      const stdLogs = globalLogs.filter(l => l.studentId === studentId);
-      const printContainer = document.getElementById('printable-report-card');
+  const std = globalStudents.find(s => s.studentId === studentId);
+  const stdLogs = globalLogs.filter(l => l.studentId === studentId);
+  const printContainer = document.getElementById('printable-report-card');
 
-      const total = stdLogs.length;
-      const present = stdLogs.filter(l => l.attendance !== 'Absent').length;
-      const attRate = total > 0 ? Math.round((present / total) * 100) : 100;
-      const akhlaq = calculateAkhlaqMetric(stdLogs);
+  const total = stdLogs.length;
+  const present = stdLogs.filter(l => l.attendance !== 'Absent').length;
+  const attRate = total > 0 ? Math.round((present / total) * 100) : 100;
+  const akhlaq = calculateAkhlaqMetric(stdLogs);
 
-      printContainer.innerHTML = `
-        <div style="text-align:center; border-bottom:2px solid #064e3b; padding-bottom:12px; margin-bottom:16px;">
-          <h2 style="font-family:'Amiri', serif; color:#064e3b; margin:0;">${document.getElementById('college-name-display').innerText}</h2>
-          <p style="margin:2px 0; color:#64748b; font-size:0.9rem;">Official Monthly Hifz & Akhlaq Progress Report</p>
+  // ഈ മാസം അവസാനം ഓതിയ ഭാഗങ്ങളും തുടക്കവും കണ്ടെത്തുന്നു
+  const firstLog = stdLogs[stdLogs.length - 1] || {};
+  const latestLog = stdLogs[0] || {};
+
+  printContainer.innerHTML = `
+    <div style="font-family:'Plus Jakarta Sans', sans-serif; padding:15px; max-width:800px; margin:auto; border:2px solid #064e3b; border-radius:8px;">
+      <!-- Header -->
+      <div style="text-align:center; border-bottom:2px solid #064e3b; padding-bottom:8px; margin-bottom:12px;">
+        <h2 style="font-family:'Amiri', serif; color:#064e3b; margin:0; font-size:1.6rem;">${document.getElementById('college-name-display').innerText}</h2>
+        <p style="margin:2px 0; color:#64748b; font-size:0.85rem; font-weight:600;">Monthly Hifz & Akhlaq Performance Dossier</p>
+      </div>
+
+      <!-- Student Info Grid -->
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:12px; font-size:0.8rem; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
+        <div><strong>വിദ്യാർത്ഥി:</strong><br>${std ? std.name : studentId}</div>
+        <div><strong>അഡ്മിഷൻ നമ്പർ:</strong><br>${studentId}</div>
+        <div><strong>പൂർത്തിയായ ജുസ്അ്:</strong><br>${std?.juz || 0} / 30 Juz</div>
+        <div><strong>ഹാജർ നില:</strong><br>${attRate}% (${present}/${total} Days)</div>
+      </div>
+
+      <!-- Monthly Summary Metrics (Card Box) -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px; font-size:0.82rem;">
+        <div style="border:1px solid #cbd5e1; border-radius:6px; padding:10px; background:#f0fdf4;">
+          <strong style="color:#166534; display:block; margin-bottom:4px;">📖 സബഖ് & മൻസിൽ പുരോഗതി:</strong>
+          <div>• ആരംഭം: ${firstLog.sabaq?.target || '—'}</div>
+          <div>• നിലവിലെ ഭാഗം: ${latestLog.sabaq?.target || '—'}</div>
+          <div>• റിവിഷൻ (മൻസിൽ): ${latestLog.manzil?.target || 'Regular Juz Revision'}</div>
         </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:0.9rem;">
-          <div><strong>Student:</strong> ${std ? std.name : studentId} (${studentId})</div>
-          <div><strong>Hifz:</strong> ${std?.juz || 0} / 30 Juz</div>
-          <div><strong>Attendance:</strong> ${attRate}%</div>
-          <div><strong>Monthly Akhlaq:</strong> ${akhlaq.grade} (${akhlaq.score}%)</div>
+
+        <div style="border:1px solid #cbd5e1; border-radius:6px; padding:10px; background:#fefce8;">
+          <strong style="color:#854d0e; display:block; margin-bottom:4px;">⭐ അഖ്‌ലാഖ് & അച്ചടക്ക നിലവാരം:</strong>
+          <div>• പ്രതിമാസ ഗ്രേഡ്: <strong>${akhlaq.grade} (${akhlaq.score}%)</strong></div>
+          <div style="font-size:0.75rem; color:#475569; margin-top:2px;">• നിരീക്ഷിച്ച കാര്യങ്ങൾ: ${akhlaq.topTags || 'നല്ല പെരുമാറ്റം'}</div>
         </div>
-        ${akhlaq.topTags ? `<div style="font-size:0.8rem; background:#f8fafc; padding:6px; border-radius:4px; margin-bottom:10px;"><strong>Recorded Behavior Points:</strong> ${akhlaq.topTags}</div>` : ''}
-        <table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:10px;">
-          <thead>
-            <tr style="background:#f1f5f9; text-align:left;">
-              <th style="padding:8px; border:1px solid #cbd5e1;">Date</th>
-              <th style="padding:8px; border:1px solid #cbd5e1;">Sabaq</th>
-              <th style="padding:8px; border:1px solid #cbd5e1;">Sabqi</th>
-              <th style="padding:8px; border:1px solid #cbd5e1;">Manzil</th>
-              <th style="padding:8px; border:1px solid #cbd5e1;">Ustadh Notes</th>
+      </div>
+
+      <!-- Last 7 Days / Weekly Snapshot (Compact Table) -->
+      <strong style="font-size:0.82rem; color:#064e3b; display:block; margin-bottom:4px;">സമീപകാല പ്രവർത്തനങ്ങൾ (Recent Snapshot):</strong>
+      <table style="width:100%; border-collapse:collapse; font-size:0.75rem; margin-bottom:15px;">
+        <thead>
+          <tr style="background:#e2e8f0; text-align:left;">
+            <th style="padding:5px 6px; border:1px solid #cbd5e1;">തീയതി</th>
+            <th style="padding:5px 6px; border:1px solid #cbd5e1;">സബഖ്</th>
+            <th style="padding:5px 6px; border:1px solid #cbd5e1;">സബ്ഖി</th>
+            <th style="padding:5px 6px; border:1px solid #cbd5e1;">മൻസിൽ</th>
+            <th style="padding:5px 6px; border:1px solid #cbd5e1;">റിമാർക്ക്</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stdLogs.slice(0, 8).map(l => `
+            <tr>
+              <td style="padding:4px 6px; border:1px solid #cbd5e1;">${l.dateStr}</td>
+              <td style="padding:4px 6px; border:1px solid #cbd5e1;">${l.sabaq?.target || '—'} (${l.sabaq?.grade || ''})</td>
+              <td style="padding:4px 6px; border:1px solid #cbd5e1;">${l.sabqi?.target || '—'}</td>
+              <td style="padding:4px 6px; border:1px solid #cbd5e1;">${l.manzil?.target || '—'}</td>
+              <td style="padding:4px 6px; border:1px solid #cbd5e1;">${l.note || '—'}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${stdLogs.map(l => `
-              <tr>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1;">${l.dateStr}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1;">${l.sabaq?.target || '—'}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1;">${l.sabqi?.target || '—'}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1;">${l.manzil?.target || '—'}</td>
-                <td style="padding:6px 8px; border:1px solid #cbd5e1;">${l.note || '—'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <div style="margin-top:40px; display:flex; justify-content:space-between; font-size:0.85rem;">
-          <div>Ustadh Signature: __________________</div>
-          <div>Principal Signature: __________________</div>
-        </div>
-      `;
+          `).join('')}
+        </tbody>
+      </table>
 
-      window.print();
-    };
+      <!-- Signatures -->
+      <div style="margin-top:25px; display:flex; justify-content:space-between; font-size:0.8rem; padding:0 20px;">
+        <div style="text-align:center;">
+          <div style="border-top:1px dashed #000; width:150px; margin-bottom:4px;"></div>
+          ഉസ്താദിന്റെ ഒപ്പ്
+        </div>
+        <div style="text-align:center;">
+          <div style="border-top:1px dashed #000; width:150px; margin-bottom:4px;"></div>
+          പ്രിൻസിപ്പലിന്റെ ഒപ്പ്
+        </div>
+      </div>
+    </div>
+  `;
+
+  window.print();
+};
+
 
     function setupParentPortal() {
       document.getElementById('p-child-name').innerText = currentUser.name || currentUser.studentId;
