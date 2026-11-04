@@ -10,6 +10,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#064e3b">
 
+  <!-- Manifest -->
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Al-Furqan%20Hifz%20Tracker%22%2C%22short_name%22%3A%22HifzTracker%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%23064e3b%22%7D">
+
   <!-- Google Fonts & Lucide Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -241,7 +244,9 @@
 
     .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
     .tag-mumtaz { background: #dcfce7; color: #15803d; }
+    .tag-jayyid { background: #fef3c7; color: #b45309; }
     .tag-not-recited { background: #f1f5f9; color: #64748b; border: 1px dashed #cbd5e1; }
+    .tag-repeat { background: #fee2e2; color: #991b1b; }
     .tag-present { background: #dcfce7; color: #166534; }
     .tag-absent { background: #fee2e2; color: #991b1b; }
 
@@ -401,7 +406,7 @@
             </div>
           </div>
 
-          <!-- 1. Sabaq with Quick Chips -->
+          <!-- 1. Sabaq with Quick Chips & Bilingual Evaluation -->
           <div class="form-group" id="sec-sabaq">
             <label>1. Sabaq (New Lesson)</label>
             <input type="text" id="sabaq-target" placeholder="Surah & Ayahs (e.g. Al-Baqarah 1-10)">
@@ -412,15 +417,15 @@
               <span class="portion-chip" onclick="setPortion('sabaq-target', '2 Pages')">+ 2 Pages</span>
             </div>
             <select id="sabaq-grade">
-              <option value="Mumtaz (ممتاز)">Mumtaz (ممتاز)</option>
-              <option value="Jayyid Jiddan">Jayyid Jiddan</option>
-              <option value="Jayyid">Jayyid</option>
-              <option value="Needs Repeat">Needs Repeat</option>
+              <option value="Mumtaz (ممتاز - Excellent)">Mumtaz (ممتاز - Excellent)</option>
+              <option value="Jayyid Jiddan (جيد جداً - Very Good)">Jayyid Jiddan (جيد جداً - Very Good)</option>
+              <option value="Jayyid (جيد - Good)">Jayyid (جيد - Good)</option>
+              <option value="Needs Repeat (ഇനിയും ഓതണം)">Needs Repeat (ഇനിയും ഓതണം)</option>
               <option value="Not Recited">Not Recited (കേൾപ്പിച്ചില്ല)</option>
             </select>
           </div>
 
-          <!-- 2. Sabqi with Quick Chips -->
+          <!-- 2. Sabqi with Quick Chips & Bilingual Evaluation -->
           <div class="form-group" id="sec-sabqi">
             <label>2. Sabqi (Recent)</label>
             <input type="text" id="sabqi-target" placeholder="Portion (e.g. Last 5 pages)">
@@ -431,14 +436,15 @@
               <span class="portion-chip" onclick="setPortion('sabqi-target', '5 Pages')">+ 5 Pages</span>
             </div>
             <select id="sabqi-grade">
-              <option value="Mumtaz">Mumtaz</option>
-              <option value="Jayyid Jiddan">Jayyid Jiddan</option>
-              <option value="Weak">Weak</option>
+              <option value="Mumtaz (ممتاز - Excellent)">Mumtaz (ممتاز - Excellent)</option>
+              <option value="Jayyid Jiddan (جيد جداً - Very Good)">Jayyid Jiddan (جيد جداً - Very Good)</option>
+              <option value="Jayyid (جيد - Good)">Jayyid (جيد - Good)</option>
+              <option value="Weak / Needs Repeat (ശ്രദ്ധ കുറവുണ്ട്)">Weak / Needs Repeat (ശ്രദ്ധ കുറവുണ്ട്)</option>
               <option value="Not Recited">Not Recited (കേൾപ്പിച്ചില്ല)</option>
             </select>
           </div>
 
-          <!-- 3. Manzil with Quick Chips -->
+          <!-- 3. Manzil with Quick Chips & Bilingual Evaluation -->
           <div class="form-group" id="sec-manzil">
             <label>3. Manzil (Revision)</label>
             <input type="text" id="manzil-target" placeholder="Juz / Portion (e.g. Juz 3)">
@@ -449,26 +455,27 @@
               <span class="portion-chip" onclick="setPortion('manzil-target', '3 Juz')">+ 3 Juz</span>
             </div>
             <select id="manzil-grade">
-              <option value="Mumtaz (Solid)">Mumtaz (Solid)</option>
-              <option value="Acceptable">Acceptable</option>
-              <option value="Needs Revision">Needs Revision</option>
+              <option value="Mumtaz (Solid / ممتاز)">Mumtaz (Solid / ممتاز - Excellent)</option>
+              <option value="Jayyid Jiddan (جيد جداً - Very Good)">Jayyid Jiddan (جيد جداً - Very Good)</option>
+              <option value="Acceptable (جيد - Satisfactory)">Acceptable (جيد - Satisfactory)</option>
+              <option value="Needs Revision (വീണ്ടും ഓതണം)">Needs Revision (വീണ്ടും ഓതണം)</option>
               <option value="Not Recited">Not Recited (കേൾപ്പിച്ചില്ല)</option>
             </select>
           </div>
 
-          <!-- Conduct -->
+          <!-- Conduct with Bilingual labels -->
           <div class="form-group">
-            <label>Conduct & Akhlaq</label>
+            <label>Conduct & Akhlaq (സ്വഭാവം & അച്ചടക്കം)</label>
             <select id="student-akhlaq">
-              <option value="Excellent (ممتاز)">Excellent (ممتاز)</option>
-              <option value="Good (നല്ലത്)">Good (നല്ലത്)</option>
-              <option value="Needs Focus">Needs Focus (ശ്രദ്ധിക്കേണ്ടതുണ്ട്)</option>
+              <option value="Excellent (ممتاز - മികച്ച അച്ചടക്കം)">Excellent (ممتاز - മികച്ച അച്ചടക്കം)</option>
+              <option value="Good (جيد - നല്ലത്)">Good (جيد - നല്ലത്)</option>
+              <option value="Needs Focus (ശ്രദ്ധിക്കേണ്ടതുണ്ട്)">Needs Focus (ശ്രദ്ധിക്കേണ്ടതുണ്ട്)</option>
             </select>
           </div>
 
           <!-- Ustadh Remark -->
           <div class="form-group">
-            <label>Ustadh Remark</label>
+            <label>Ustadh Remark / Notes</label>
             <input type="text" id="teacher-note" placeholder="Remark for parents...">
           </div>
 
